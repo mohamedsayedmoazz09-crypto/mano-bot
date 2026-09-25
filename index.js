@@ -3,15 +3,19 @@ const qrcode = require('qrcode-terminal');
 
 async function startBot() {
     const { state, saveCreds } = await useMultiFileAuthState('auth');
-    const sock = makeWASocket({ auth: state, printQRInTerminal: true });
+    const sock = makeWASocket({ auth: state, browser: ["Ubuntu", "Chrome", "22.04"] });
     sock.ev.on('creds.update', saveCreds);
     sock.ev.on('connection.update', (update) => {
-        const { connection, lastDisconnect } = update;
+        const { connection, lastDisconnect, qr } = update;
+        if(qr) {
+            console.log('QR CODE:');
+            qrcode.generate(qr, {small: true});
+        }
         if(connection === 'close') {
             const shouldReconnect = lastDisconnect?.error?.output?.statusCode!== DisconnectReason.loggedOut;
             if(shouldReconnect) startBot();
         } else if(connection === 'open') {
-            console.log('✅ مانو بوت اشتغل بنجاح!');
+            console.log('✅ مانو بوت شغال');
         }
     });
     sock.ev.on('messages.upsert', async m => {
@@ -19,9 +23,9 @@ async function startBot() {
         if(!msg.message || msg.key.fromMe) return;
         const text = msg.message.conversation || msg.message.extendedTextMessage?.text || '';
         if(text.toLowerCase() === 'السلام عليكم' || text.toLowerCase() === 'hi') {
-            await sock.sendMessage(msg.key.remoteJid, { text: 'وعليكم السلام! انا مانو بوت شغال ✅' });
+            await sock.sendMessage(msg.key.remoteJid, { text: 'وعليكم السلام انا مانو بوت شغال ✅' });
         }
     });
 }
 startBot();
-console.log('🚀 جاري تشغيل مانو بوت...');
+console.log('...جاري تشغيل مانو بوت');
